@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta http-equiv="refresh" content="900">
+<title>USD to CAD Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{color-scheme:light;--ground:#f5f7f6;--panel:#fff;--sunk:#eef2f0;--ink:#16211f;--ink-2:#4c5a56;
+ --ink-3:#7c8a85;--rule:#dbe3e0;--rule-2:#c6d1cd;--market:#2a78d6;--wise:#eb6834;--calm:#1baf7a;--churn:#eda100;
+ --display:'Archivo',system-ui,-apple-system,sans-serif;--body:'Source Serif 4',Georgia,serif;
+ --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--ground:#111614;--panel:#181f1d;
+ --sunk:#1f2724;--ink:#eef3f1;--ink-2:#a8b6b1;--ink-3:#7a8883;--rule:#2a3431;--rule-2:#3a4642;
+ --market:#3987e5;--wise:#e07a4a;--calm:#199e70;--churn:#c98500}}
+:root[data-theme="dark"]{color-scheme:dark;--ground:#111614;--panel:#181f1d;--sunk:#1f2724;--ink:#eef3f1;
+ --ink-2:#a8b6b1;--ink-3:#7a8883;--rule:#2a3431;--rule-2:#3a4642;--market:#3987e5;--wise:#e07a4a;
+ --calm:#199e70;--churn:#c98500}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.58;
+ -webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:28px 20px 70px}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h2,h3,.eyebrow,.pill,.big,.wlabel,.stat dt,.ax,.ind dt{font-family:var(--display)}
+.eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+.hero{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:28px 28px 26px;margin-bottom:14px}
+.big{font-family:var(--mono);font-size:clamp(48px,13vw,74px);font-weight:600;letter-spacing:-.035em;line-height:1;margin:0}
+.chg{font-family:var(--mono);font-size:17px;font-weight:500;margin:13px 0 0;color:var(--ink-2)}
+.chg b{font-weight:600}.up{color:var(--calm)}.dn{color:var(--wise)}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;
+ padding:6px 12px;border-radius:999px;margin-top:19px;border:1px solid}
+.pill.calm{color:var(--calm);border-color:var(--calm)}
+.pill.churn{color:var(--churn);border-color:var(--churn)}
+.pill.mid{color:var(--ink-2);border-color:var(--rule-2);background:var(--sunk)}
+.pill i{width:7px;height:7px;border-radius:50%;background:currentColor;display:block}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:24px 28px 26px;margin-bottom:14px}
+h2{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:0 0 6px}
+.sub{font-size:14px;color:var(--ink-2);margin:0 0 24px;line-height:1.5}
+/* window rows */
+.wrow{margin-bottom:30px}.wrow:last-child{margin-bottom:4px}
+.whead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:11px;flex-wrap:wrap}
+.wlabel{font-size:14.5px;font-weight:600}
+.wmeta{font-family:var(--mono);font-size:12.5px;color:var(--ink-2)}
+.wmeta b{font-weight:600;color:var(--ink)}
+.track{position:relative;height:8px;background:var(--sunk);border-radius:999px}
+.track-fill{position:absolute;top:0;bottom:0;left:0;background:var(--market);opacity:.28;border-radius:999px}
+.track-dot{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;
+ background:var(--wise);border:2.5px solid var(--panel);box-shadow:0 0 0 1px var(--wise)}
+.track-target{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--ink-3);opacity:.55}
+.track-target span{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-family:var(--mono);
+ font-size:10px;color:var(--ink-3);white-space:nowrap}
+.track-ends{display:flex;justify-content:space-between;margin-top:10px;font-family:var(--mono);
+ font-size:12.5px;color:var(--ink-3)}
+.tgap{margin-bottom:16px}
+.stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:1px;background:var(--rule);
+ border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-bottom:14px}
+.stat div{background:var(--panel);padding:16px 18px}
+.stat dt{font-size:10px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.stat dd{margin:0;font-family:var(--mono);font-size:18px;font-weight:500}
+.scroll{overflow-x:auto}
+svg{display:block;width:100%;height:auto}
+.g{stroke:var(--rule);stroke-width:1}
+.ax{font-size:10.5px;font-weight:500;fill:var(--ink-3)}
+.tl{stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:4 4;opacity:.7}
+.ln{fill:none;stroke:var(--market);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.ar{fill:var(--market);opacity:.09}
+.pt{fill:var(--wise);stroke:var(--panel);stroke-width:2}
+.empty{font-size:14px;color:var(--ink-3);margin:0;padding:28px 0;text-align:center}
+/* explainer */
+.ind{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:4px;
+ overflow:hidden;margin:0 0 26px}
+.ind>div{background:var(--panel);padding:17px 20px;display:flex;justify-content:space-between;
+ align-items:baseline;gap:14px;flex-wrap:wrap}
+.ind dt{font-size:13.5px;font-weight:600;margin:0}
+.ind dd{margin:0;font-family:var(--mono);font-size:16px;font-weight:500}
+.ex{margin-bottom:30px}.ex:last-child{margin-bottom:0}
+h3{font-size:16.5px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px;color:var(--ink)}
+.exval{font-family:var(--mono);font-size:13px;color:var(--wise);font-weight:500;margin:0 0 10px}
+.ex p{margin:0 0 12px;font-size:15.5px}
+.ex p:last-child{margin-bottom:0}
+.ex .reading{background:var(--sunk);border-left:2px solid var(--market);padding:13px 17px;
+ border-radius:0 3px 3px 0;font-size:15px;color:var(--ink-2)}
+.ex .reading b{color:var(--ink);font-weight:600}
+footer{font-size:12.5px;color:var(--ink-3);line-height:1.65;padding-top:8px}
+.stale{color:var(--churn);font-weight:600}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <p class="eyebrow">USD &#8594; CAD &#183; the rate Wise shows</p>
+  <div class="hero">
+    <p class="big" id="rate"></p>
+    <p class="chg" id="chg"></p>
+    <span class="pill" id="band"></span>
+  </div>
+
+  <div class="card">
+    <h2>Where it sits</h2>
+    <p class="sub" id="wsub"></p>
+    <div id="tracks"></div>
+  </div>
+
+  <dl class="stat" id="stats"></dl>
+
+  <div class="card">
+    <h2>Last 90 days</h2>
+    <div class="scroll" id="c90"></div>
+  </div>
+
+  <div class="card">
+    <h2>Last session, hour by hour</h2>
+    <div class="scroll" id="ci"></div>
+  </div>
+
+  <div class="card">
+    <h2>The other three numbers</h2>
+    <p class="sub">Standard market measures, and what each one is actually saying about today.</p>
+    <dl class="ind" id="indvals"></dl>
+    <div id="explain"></div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const D = __DATA__;
+const f4 = n => n.toFixed(4);
+const sp = (n,d=2) => (n>0?"+":"") + n.toFixed(d) + "%";
+const $  = id => document.getElementById(id);
+const I  = D.ind, W = D.win;
+
+/* ---------- hero ---------- */
+$("rate").textContent = f4(D.rate);
+$("chg").innerHTML = D.change_pct==null ? "No move recorded this session"
+  : '<b class="'+(D.change_pct>=0?"up":"dn")+'">'+sp(D.change_pct)+"</b> on the session";
+const pr90 = W["90"].pct_rank;
+const band = pr90>=70 ? ["Near the top of the 90-day range","calm"]
+           : pr90>=30 ? ["Mid-range for the last 90 days","mid"]
+           :            ["Near the bottom of the 90-day range","churn"];
+$("band").className = "pill " + band[1];
+$("band").innerHTML = "<i></i>" + band[0];
+
+/* ---------- range tracks ---------- */
+function track(lo,hi,cur,target,label,rank,trend,basis){
+  const p = v => Math.max(0,Math.min(100,((v-lo)/(hi-lo))*100));
+  const cp = p(cur), tp = (target!=null && target>=lo && target<=hi) ? p(target) : null;
+  return '<div class="wrow"><div class="whead">'+
+    '<span class="wlabel">'+label+'</span>'+
+    '<span class="wmeta">percentile <b>'+rank.toFixed(1)+'</b>'+
+      '  &#183;  trend <b class="'+(trend>=0?"up":"dn")+'">'+sp(trend)+'</b></span></div>'+
+    '<div class="track'+(tp!=null?' tgap':'')+'">'+
+    '<div class="track-fill" style="width:'+cp.toFixed(2)+'%"></div>'+
+    (tp!=null?'<div class="track-target" style="left:'+tp.toFixed(2)+'%"><span>target '+f4(target)+'</span></div>':'')+
+    '<div class="track-dot" style="left:'+cp.toFixed(2)+'%"></div></div>'+
+    '<div class="track-ends"><span class="num">'+f4(lo)+'</span>'+
+    '<span class="num">'+f4(hi)+'</span></div></div>';
+}
+$("wsub").innerHTML = 'The dot is today. Each bar is the low-to-high range over that period, '+
+  'so the further right the dot, the better the rate is for you. '+
+  '<b>Notice how it changes with the window</b> &#8212; near the floor of the last 90 days, '+
+  'but middling against a full year.';
+$("tracks").innerHTML =
+  track(D.d5.lo, D.d5.hi, D.rate, null, "5 days", D.d5.pct_rank, D.d5.trend_pct) +
+  ["30","60","90","365"].map(k => track(W[k].lo, W[k].hi, D.rate,
+      (k==="90"||k==="365") ? D.threshold : null,
+      k==="365" ? "365 days" : k+" days", W[k].pct_rank, W[k].trend_pct)).join("");
+
+/* ---------- stat tiles ---------- */
+const bpsAway = (D.threshold - D.rate)/D.rate*10000;
+$("stats").innerHTML = [
+  ["Target", f4(D.threshold), ""],
+  ["Days below it", String(D.days_since_target ?? "—"), ""],
+  ["Distance to it", bpsAway.toFixed(0)+" bps", ""],
+  ["Typical day", I.atr_14_bps.toFixed(0)+" bps", ""]
+].map(r=>'<div><dt>'+r[0]+'</dt><dd class="'+r[2]+'">'+r[1]+'</dd></div>').join("");
+
+/* ---------- charts ---------- */
+function line(pts, labels, target){
+  if(pts.length<2) return '<p class="empty">Not enough data yet &#8212; this fills in as ticks arrive.</p>';
+  const Wd=760,H=210,L=54,R=16,T=16,B=28, iw=Wd-L-R, ih=H-T-B;
+  let lo=Math.min(...pts), hi=Math.max(...pts);
+  if(target!=null){lo=Math.min(lo,target);hi=Math.max(hi,target);}
+  const pad=(hi-lo)*0.09||0.0005; lo-=pad; hi+=pad;
+  const X=i=>L+iw*i/(pts.length-1), Y=v=>T+ih*(1-(v-lo)/(hi-lo));
+  const dd=pts.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1)).join("");
+  const ar=dd+"L"+X(pts.length-1).toFixed(1)+","+(T+ih).toFixed(1)+"L"+L+","+(T+ih).toFixed(1)+"Z";
+  let s='<svg viewBox="0 0 '+Wd+' '+H+'" role="img" aria-label="rate over time">';
+  [lo+(hi-lo)*0.12,(lo+hi)/2,hi-(hi-lo)*0.12].forEach(v=>{
+    s+='<line x1="'+L+'" x2="'+(Wd-R)+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'" class="g"/>'+
+       '<text x="'+(L-9)+'" y="'+(Y(v)+3.5).toFixed(1)+'" class="ax" text-anchor="end">'+f4(v)+'</text>';});
+  if(target!=null&&target>=lo&&target<=hi){
+    s+='<line x1="'+L+'" x2="'+(Wd-R)+'" y1="'+Y(target).toFixed(1)+'" y2="'+Y(target).toFixed(1)+'" class="tl"/>'+
+       '<text x="'+(Wd-R)+'" y="'+(Y(target)-7).toFixed(1)+'" class="ax" text-anchor="end">target '+f4(target)+'</text>';}
+  s+='<path d="'+ar+'" class="ar"/><path d="'+dd+'" class="ln"/>';
+  s+='<circle cx="'+X(pts.length-1).toFixed(1)+'" cy="'+Y(pts[pts.length-1]).toFixed(1)+'" r="4.5" class="pt"/>';
+  [0,Math.floor(pts.length/2),pts.length-1].forEach(i=>{
+    s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" class="ax" text-anchor="'+
+       (i===0?"start":i===pts.length-1?"end":"middle")+'">'+labels[i]+'</text>';});
+  return s+"</svg>";
+}
+const md = s => new Date(s+"T00:00:00Z").toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"});
+const hm = e => new Date(e*1000).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"});
+$("c90").innerHTML = line(D.s90.map(r=>r[1]), D.s90.map(r=>md(r[0])), D.threshold);
+$("ci").innerHTML  = line(D.si.map(r=>r[1]),  D.si.map(r=>hm(r[0])),  null);
+
+/* ---------- indicator values + explanations ---------- */
+$("indvals").innerHTML = [
+  ["z-score vs 20-day average", I.z_20.toFixed(2)],
+  ["Realized volatility, 20-day annualized", I.rvol_20.toFixed(1)+"%"],
+  ["Moving averages, 20 / 50 / 200-day",
+     f4(I.sma_20)+" / "+f4(I.sma_50)+" / "+f4(I.sma_200)]
+].map(r=>'<div><dt>'+r[0]+'</dt><dd>'+r[1]+'</dd></div>').join("");
+
+const z = I.z_20, rv = I.rvol_20;
+const zPctile = (100*(1/(1+Math.exp(-1.702*z)))).toFixed(0);
+const daysToTarget = (bpsAway / I.atr_14_bps).toFixed(1);
+const belowAll = I.close < I.sma_20 && I.close < I.sma_50 && I.close < I.sma_200;
+
+$("explain").innerHTML = `
+<div class="ex">
+  <h3>z-score vs the 20-day average</h3>
+  <p class="exval">today: ${z.toFixed(2)}</p>
+  <p>How far today's rate sits from its own average over the last 20 trading days, counted
+  in standard deviations rather than cents. A zero means "exactly normal for the last month".
+  Negative means below that average &#8212; which, since you are buying Canadian dollars, means worse for you.</p>
+  <p>What makes it more useful than plain distance is that it scales itself to how jumpy the
+  market has been. The same one-cent move is a big deal in a calm month and unremarkable in a
+  wild one; the z-score already accounts for that.</p>
+  <p class="reading"><b>Reading ${z.toFixed(2)}:</b> today is about ${Math.abs(z).toFixed(1)} standard
+  deviation${Math.abs(z)>=1.5?"s":""} ${z<0?"below":"above"} the recent norm &#8212; roughly the
+  ${zPctile}th percentile of a normal month. Cheap, but not extraordinary. Past
+  &#177;2 would be genuinely unusual and worth a second look.</p>
+</div>
+
+<div class="ex">
+  <h3>Realized volatility (20-day, annualized)</h3>
+  <p class="exval">today: ${rv.toFixed(1)}%</p>
+  <p>How much the rate has actually been moving lately. Take the daily percentage changes over
+  the last 20 trading days, measure how spread out they are, and scale that up to a yearly figure.
+  It describes turbulence, not direction &#8212; a rate can be very volatile and going nowhere.</p>
+  <p>The plain reading: if this pace continued for a year, the rate would finish within
+  &#177;${rv.toFixed(0)}% of where it started about two times in three.</p>
+  <p class="reading"><b>Reading ${rv.toFixed(1)}%:</b> quiet. USD/CAD normally runs somewhere around
+  6&#8211;9%, and past 15% in a crisis. A calm market is unlikely to hand you a sudden jump to
+  ${f4(D.threshold)} &#8212; getting there will more likely take weeks of drift than one dramatic day.
+  A typical day currently travels about ${I.atr_14_bps.toFixed(0)} basis points, and the target is
+  ${bpsAway.toFixed(0)} away &#8212; roughly ${daysToTarget} average days, if every one of them moved
+  the right way.</p>
+</div>
+
+<div class="ex">
+  <h3>The 20, 50 and 200-day moving averages</h3>
+  <p class="exval">today: ${f4(I.sma_20)} &#183; ${f4(I.sma_50)} &#183; ${f4(I.sma_200)}</p>
+  <p>Each is simply the average closing rate over that many trading days &#8212; roughly the last
+  month, quarter and year. Individually they are not very interesting. What people read is the
+  <em>order they stack in</em>, which says whether the recent past is stronger or weaker than the
+  more distant past.</p>
+  <p class="reading"><b>Reading them today:</b> the rate (${f4(I.close)} at the close) is
+  ${belowAll?"below all three":"mixed against them"}, so the short run is weak. The 20-day
+  (${f4(I.sma_20)}) sits below the 50-day (${f4(I.sma_50)}), meaning the last month has been weaker
+  than the last quarter &#8212; a downtrend still in force. But the 200-day (${f4(I.sma_200)}) is
+  almost exactly where the rate is now, so measured over a year this is an ordinary level. The pair
+  has given back a strong summer, not broken down.</p>
+  <p><b>The honest caveat:</b> moving averages describe what already happened. They are a reference
+  for "is this level unusual", not a forecast. Our own study of this pair found no reliable way to
+  predict it over days or weeks &#8212; so treat all three of these numbers as context for a decision
+  you make, never as a signal telling you to act.</p>
+</div>`;
+
+/* ---------- footer ---------- */
+const asOf = new Date(D.rate_ts).toLocaleString("en-US",
+  {weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"});
+$("foot").innerHTML = 'Wise rate as of <span class="num">'+asOf+'</span> Central'+
+  (D.stale?' &#183; <span class="stale">market closed &#8212; this is the last print</span>':'')+
+  '.<br>The 5-day figures come from intraday ticks; 30, 60, 90 and 365-day figures and all three '+
+  'indicators come from daily closes, so they are anchored to the '+md(I.d)+' close of '+f4(I.close)+
+  ' rather than the live rate above.<br>Rebuilt after each market close. Rate data only &#8212; no transfer amounts.';
+</script>
+</body>
+</html>

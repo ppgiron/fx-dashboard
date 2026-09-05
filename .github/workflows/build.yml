@@ -1,0 +1,44 @@
+name: Build dashboard
+
+on:
+  schedule:
+    # 22:15 UTC on weekdays — after the FX close (17:00 ET) in both CST and CDT.
+    - cron: "15 22 * * 1-5"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build page
+        env:
+          SUPABASE_URL: https://yejvzlyhqfvfxjwqufsp.supabase.co
+          SUPABASE_KEY: sb_publishable_yBwI5NRHhp8lDfaLsnHscw_cNwFU1DM
+        run: node build.mjs
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deploy
+        uses: actions/deploy-pages@v4
