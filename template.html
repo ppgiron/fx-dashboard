@@ -61,6 +61,12 @@ h2{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
 .stat div{background:var(--panel);padding:16px 18px}
 .stat dt{font-size:10px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
 .stat dd{margin:0;font-family:var(--mono);font-size:18px;font-weight:500}
+.mini{display:flex;flex-wrap:wrap;gap:0 30px;margin:18px 0 0;padding-top:16px;
+ border-top:1px solid var(--rule)}
+.mini div{display:flex;align-items:baseline;gap:9px}
+.mini dt{font-family:var(--display);font-size:10px;font-weight:600;letter-spacing:.11em;
+ text-transform:uppercase;color:var(--ink-3);margin:0}
+.mini dd{margin:0;font-family:var(--mono);font-size:15px;font-weight:500}
 .scroll{overflow-x:auto}
 svg{display:block;width:100%;height:auto}
 .g{stroke:var(--rule);stroke-width:1}
@@ -101,6 +107,20 @@ footer{font-size:12.5px;color:var(--ink-3);line-height:1.65;padding-top:8px}
   </div>
 
   <div class="card">
+    <h2 id="mh">This morning</h2>
+    <p class="sub" id="msub"></p>
+    <div class="scroll" id="cm"></div>
+    <dl class="mini" id="mstat"></dl>
+  </div>
+
+  <div class="card">
+    <h2 id="ph">Yesterday</h2>
+    <p class="sub" id="psub"></p>
+    <div class="scroll" id="cp"></div>
+    <dl class="mini" id="pstat"></dl>
+  </div>
+
+  <div class="card">
     <h2>Where it sits</h2>
     <p class="sub" id="wsub"></p>
     <div id="tracks"></div>
@@ -114,7 +134,7 @@ footer{font-size:12.5px;color:var(--ink-3);line-height:1.65;padding-top:8px}
   </div>
 
   <div class="card">
-    <h2>Last session, hour by hour</h2>
+    <h2>Today so far</h2>
     <div class="scroll" id="ci"></div>
   </div>
 
@@ -137,8 +157,13 @@ const I  = D.ind, W = D.win;
 
 /* ---------- hero ---------- */
 $("rate").textContent = f4(D.rate);
-$("chg").innerHTML = D.change_pct==null ? "No move recorded this session"
-  : '<b class="'+(D.change_pct>=0?"up":"dn")+'">'+sp(D.change_pct)+"</b> on the session";
+(function(){
+  const v = D.vs_prev_close_pct, pc = D.prev && D.prev.close;
+  $("chg").innerHTML = (v==null || pc==null)
+    ? (D.change_pct==null ? "No move recorded this session"
+       : '<b class="'+(D.change_pct>=0?"up":"dn")+'">'+sp(D.change_pct)+"</b> on the session")
+    : '<b class="'+(v>=0?"up":"dn")+'">'+sp(v)+'</b> vs yesterday&#8217;s close of '+f4(pc);
+})();
 const pr90 = W["90"].pct_rank;
 const band = pr90>=70 ? ["Near the top of the 90-day range","calm"]
            : pr90>=30 ? ["Mid-range for the last 90 days","mid"]
@@ -181,7 +206,7 @@ $("stats").innerHTML = [
 ].map(r=>'<div><dt>'+r[0]+'</dt><dd class="'+r[2]+'">'+r[1]+'</dd></div>').join("");
 
 /* ---------- charts ---------- */
-function line(pts, labels, target){
+function line(pts, labels, target, nLabels){
   if(pts.length<2) return '<p class="empty">Not enough data yet &#8212; this fills in as ticks arrive.</p>';
   const Wd=760,H=210,L=54,R=16,T=16,B=28, iw=Wd-L-R, ih=H-T-B;
   let lo=Math.min(...pts), hi=Math.max(...pts);
@@ -199,15 +224,53 @@ function line(pts, labels, target){
        '<text x="'+(Wd-R)+'" y="'+(Y(target)-7).toFixed(1)+'" class="ax" text-anchor="end">target '+f4(target)+'</text>';}
   s+='<path d="'+ar+'" class="ar"/><path d="'+dd+'" class="ln"/>';
   s+='<circle cx="'+X(pts.length-1).toFixed(1)+'" cy="'+Y(pts[pts.length-1]).toFixed(1)+'" r="4.5" class="pt"/>';
-  [0,Math.floor(pts.length/2),pts.length-1].forEach(i=>{
+  const k=Math.max(2,(nLabels||3)-1);
+  const idx=[...new Set(Array.from({length:k+1},(_,j)=>Math.round(j*(pts.length-1)/k)))];
+  idx.forEach(i=>{
     s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" class="ax" text-anchor="'+
        (i===0?"start":i===pts.length-1?"end":"middle")+'">'+labels[i]+'</text>';});
   return s+"</svg>";
 }
 const md = s => new Date(s+"T00:00:00Z").toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"});
 const hm = e => new Date(e*1000).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"});
+const dayName = s => new Date(s+"T00:00:00Z")
+  .toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric",timeZone:"UTC"});
+const miniRow = rows => rows.filter(r=>r[1]!=null)
+  .map(r=>'<div><dt>'+r[0]+'</dt><dd class="'+(r[2]||"")+'">'+r[1]+'</dd></div>').join("");
+
+/* this morning: midnight to 9am */
+(function(){
+  const m = D.morning || {}, pts = D.series_morning || [];
+  $("msub").innerHTML = pts.length
+    ? "Midnight to 9:00 AM Central, minute by minute. This is the stretch that happens while you are asleep."
+    : "No ticks recorded yet this morning.";
+  $("cm").innerHTML = line(pts.map(r=>r[1]), pts.map(r=>hm(r[0])), null, 6);
+  $("mstat").innerHTML = miniRow([
+    ["At midnight", m.open!=null?f4(m.open):null],
+    ["At 9:00 AM",  m.last!=null?f4(m.last):null],
+    ["Change", m.change_pct!=null?sp(m.change_pct):null, m.change_pct>=0?"up":"dn"]
+  ]);
+})();
+
+/* yesterday: full day */
+(function(){
+  const p = D.prev || {}, pts = D.series_prevday || [];
+  if(p.date) $("ph").textContent = "Yesterday \u2014 " + dayName(p.date);
+  $("psub").innerHTML = pts.length
+    ? "The whole of the previous trading day, midnight to midnight Central."
+    : "No minute data for the previous trading day.";
+  $("cp").innerHTML = line(pts.map(r=>r[1]), pts.map(r=>hm(r[0])), null, 7);
+  $("pstat").innerHTML = miniRow([
+    ["Open",  p.open!=null?f4(p.open):null],
+    ["Close", p.close!=null?f4(p.close):null],
+    ["Low",   p.lo!=null?f4(p.lo):null],
+    ["High",  p.hi!=null?f4(p.hi):null],
+    ["Change", p.change_pct!=null?sp(p.change_pct):null, p.change_pct>=0?"up":"dn"]
+  ]);
+})();
+
 $("c90").innerHTML = line(D.s90.map(r=>r[1]), D.s90.map(r=>md(r[0])), D.threshold);
-$("ci").innerHTML  = line(D.si.map(r=>r[1]),  D.si.map(r=>hm(r[0])),  null);
+$("ci").innerHTML  = line(D.si.map(r=>r[1]),  D.si.map(r=>hm(r[0])),  null, 5);
 
 /* ---------- indicator values + explanations ---------- */
 $("indvals").innerHTML = [

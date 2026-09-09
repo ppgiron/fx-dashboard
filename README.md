@@ -1,7 +1,8 @@
 # USD → CAD dashboard
 
-A single static page showing where the USD→CAD rate Wise displays currently sits,
-across five lookback windows, with the technical indicators explained in plain language.
+A single static page showing where the USD→CAD rate Wise displays currently sits: the
+overnight move, the previous trading day, five lookback windows, and the technical
+indicators explained in plain language.
 
 **Live page:** https://ppgiron.github.io/fx-dashboard/
 
@@ -20,8 +21,10 @@ Supabase (fx-tracker)          GitHub Actions              GitHub Pages
   and writes `dist/index.html`. It **refuses to build** on a missing rate, a missing
   lookback window, an empty series, or a rate outside its own 90-day range — a stale
   page beats a wrong one.
-- `.github/workflows/build.yml` — runs at 22:15 UTC on weekdays (after the 17:00 ET
-  FX close in both CST and CDT), on every push to `main`, and on demand via
+- `.github/workflows/build.yml` — runs on weekdays at **13:30 and 14:30 UTC** (so the
+  page is rebuilt shortly before the 9:00 AM Central digest goes out, in both CST and
+  CDT — one of the two firings is always the right one) and again at **22:15 UTC** after
+  the FX close. Also on every push to `main`, and on demand via
   **Actions → Build dashboard → Run workflow**.
 
 ## To change the design

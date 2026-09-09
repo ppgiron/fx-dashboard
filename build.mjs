@@ -34,11 +34,16 @@ const D = {
   threshold: n(raw.threshold),
   change_pct: n(raw.change_pct),
   days_since_target: raw.days_since_target,
+  vs_prev_close_pct: n(raw.vs_prev_close_pct),
+  prev: nums(raw.prev),
+  morning: nums(raw.morning),
   d5: nums(raw.d5),
   win: Object.fromEntries(Object.entries(raw.win ?? {}).map(([k, v]) => [k, nums(v)])),
   ind: nums(raw.ind),
   s90: (raw.series_90d ?? []).map((r) => [r[0], Number(r[1])]),
   si:  (raw.series_intra ?? []).map((r) => [Number(r[0]), Number(r[1])]),
+  series_morning: (raw.series_morning ?? []).map((r) => [Number(r[0]), Number(r[1])]),
+  series_prevday: (raw.series_prevday ?? []).map((r) => [Number(r[0]), Number(r[1])]),
 };
 
 // Refuse to publish something broken — a stale page beats a wrong one.
@@ -51,10 +56,16 @@ if (D.win["90"] && !(D.rate >= D.win["90"].lo && D.rate <= D.win["90"].hi)) {
 }
 if (problems.length) throw new Error("Refusing to build:\n  - " + problems.join("\n  - "));
 
+// Empty intraday series are survivable (holiday, first deploy) — the page
+// renders an explanatory placeholder. Warn, do not fail.
+if (!D.series_morning.length) console.warn("warning: no morning ticks yet");
+if (!D.series_prevday.length) console.warn("warning: no previous-day ticks");
+
 const html = (await readFile("template.html", "utf8"))
   .replace("__DATA__", JSON.stringify(D));
 await mkdir("dist", { recursive: true });
 await writeFile("dist/index.html", html);
 
 console.log(`built dist/index.html — rate ${D.rate}, ${D.s90.length} daily points, ` +
-            `${D.si.length} intraday points, session ${D.session}`);
+            `${D.series_morning.length} morning, ${D.series_prevday.length} prev-day, ` +
+            `${D.si.length} today, session ${D.session}, prev ${D.prev?.date}`);

@@ -2,7 +2,11 @@ name: Build dashboard
 
 on:
   schedule:
-    # 22:15 UTC on weekdays — after the FX close (17:00 ET) in both CST and CDT.
+    # Weekday mornings, shortly before the 9:00 AM Central digest. 13:30 UTC is
+    # 08:30 CDT and 14:30 UTC is 08:30 CST — one of the two is always right, and
+    # rebuilding twice is harmless for a static page.
+    - cron: "30 13,14 * * 1-5"
+    # And again after the FX close (17:00 ET) in both CST and CDT.
     - cron: "15 22 * * 1-5"
   workflow_dispatch:
   push:
