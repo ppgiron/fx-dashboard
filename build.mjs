@@ -37,6 +37,10 @@ const D = {
   vs_prev_close_pct: n(raw.vs_prev_close_pct),
   prev: nums(raw.prev),
   morning: nums(raw.morning),
+  days: (raw.days ?? []).map((x) => ({
+    ...nums(x),
+    pts: (x.pts ?? []).map((r) => [Number(r[0]), Number(r[1])]),
+  })),
   d5: nums(raw.d5),
   win: Object.fromEntries(Object.entries(raw.win ?? {}).map(([k, v]) => [k, nums(v)])),
   ind: nums(raw.ind),
@@ -60,6 +64,7 @@ if (problems.length) throw new Error("Refusing to build:\n  - " + problems.join(
 // renders an explanatory placeholder. Warn, do not fail.
 if (!D.series_morning.length) console.warn("warning: no morning ticks yet");
 if (!D.series_prevday.length) console.warn("warning: no previous-day ticks");
+if (D.days.length < 20) console.warn(`warning: only ${D.days.length} day panels available`);
 
 const html = (await readFile("template.html", "utf8"))
   .replace("__DATA__", JSON.stringify(D));
@@ -68,4 +73,5 @@ await writeFile("dist/index.html", html);
 
 console.log(`built dist/index.html — rate ${D.rate}, ${D.s90.length} daily points, ` +
             `${D.series_morning.length} morning, ${D.series_prevday.length} prev-day, ` +
-            `${D.si.length} today, session ${D.session}, prev ${D.prev?.date}`);
+            `${D.si.length} today, ${D.days.length} day panels, session ${D.session}, ` +
+            `prev ${D.prev?.date}`);

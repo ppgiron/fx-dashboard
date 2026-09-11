@@ -67,7 +67,22 @@ h2{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
 .mini dt{font-family:var(--display);font-size:10px;font-weight:600;letter-spacing:.11em;
  text-transform:uppercase;color:var(--ink-3);margin:0}
 .mini dd{margin:0;font-family:var(--mono);font-size:15px;font-weight:500}
-.scroll{overflow-x:auto}
+.grid20{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:1px;
+ background:var(--rule);border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.gcell{background:var(--panel);padding:11px 13px 9px}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:3px}
+.gday{font-family:var(--display);font-size:11.5px;font-weight:600;color:var(--ink)}
+.gres{font-family:var(--mono);font-size:9px;color:var(--ink-3);letter-spacing:.03em}
+.gfoot{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;
+ font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums}
+.gclose{font-weight:600;color:var(--ink)}
+.gsvg{display:block;width:100%;height:auto}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.scroll.detail svg{min-width:680px}
+.swipe{font-size:11.5px;color:var(--ink-3);margin:8px 0 0;font-family:var(--display)}
+@media(min-width:760px){.swipe{display:none}}
+.dot{fill:var(--market);stroke:var(--panel);stroke-width:1.5}
+.dotlab{font-family:var(--mono);font-size:9.5px;fill:var(--ink-2);font-variant-numeric:tabular-nums}
 svg{display:block;width:100%;height:auto}
 .g{stroke:var(--rule);stroke-width:1}
 .ax{font-size:10.5px;font-weight:500;fill:var(--ink-3)}
@@ -109,15 +124,25 @@ footer{font-size:12.5px;color:var(--ink-3);line-height:1.65;padding-top:8px}
   <div class="card">
     <h2 id="mh">This morning</h2>
     <p class="sub" id="msub"></p>
-    <div class="scroll" id="cm"></div>
+    <div class="scroll detail" id="cm"></div>
+    <p class="swipe">Swipe the chart sideways to read every value.</p>
     <dl class="mini" id="mstat"></dl>
   </div>
 
   <div class="card">
     <h2 id="ph">Yesterday</h2>
     <p class="sub" id="psub"></p>
-    <div class="scroll" id="cp"></div>
+    <div class="scroll detail" id="cp"></div>
+    <p class="swipe">Swipe the chart sideways to read every value.</p>
     <dl class="mini" id="pstat"></dl>
+  </div>
+
+  <div class="card">
+    <h2>Last 20 trading days</h2>
+    <p class="sub" id="gsub"></p>
+    <div class="grid20" id="grid20"></div>
+    <p class="swipe" style="display:block">Every panel shares one vertical scale, so a panel
+      sitting lower on the page really is a lower rate — not just a differently drawn line.</p>
   </div>
 
   <div class="card">
@@ -206,6 +231,55 @@ $("stats").innerHTML = [
 ].map(r=>'<div><dt>'+r[0]+'</dt><dd class="'+r[2]+'">'+r[1]+'</dd></div>').join("");
 
 /* ---------- charts ---------- */
+/* Like line(), but marks a reading at a fixed time interval and prints the
+   rate beside each one. Labels alternate above/below the curve so they have
+   room; the SVG keeps a min-width so a phone scrolls it instead of shrinking
+   the numbers into illegibility. */
+function lineMarked(series, stepSec, xLabelEvery){
+  if(!series || series.length<2)
+    return '<p class="empty">Not enough data yet &#8212; this fills in as ticks arrive.</p>';
+  const Wd=860,H=270,L=56,R=22,T=34,B=34, iw=Wd-L-R, ih=H-T-B;
+  const vals=series.map(r=>r[1]);
+  let lo=Math.min(...vals), hi=Math.max(...vals);
+  const pad=(hi-lo)*0.18||0.0005; lo-=pad; hi+=pad;
+  const X=i=>L+iw*i/(series.length-1), Y=v=>T+ih*(1-(v-lo)/(hi-lo));
+  const dd=vals.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1)).join("");
+  const ar=dd+"L"+X(series.length-1).toFixed(1)+","+(T+ih).toFixed(1)+"L"+L+","+(T+ih).toFixed(1)+"Z";
+  let s='<svg viewBox="0 0 '+Wd+' '+H+'" role="img" aria-label="rate over time with readings">';
+  [lo+(hi-lo)*0.15,(lo+hi)/2,hi-(hi-lo)*0.15].forEach(v=>{
+    s+='<line x1="'+L+'" x2="'+(Wd-R)+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'" class="g"/>'+
+       '<text x="'+(L-9)+'" y="'+(Y(v)+3.5).toFixed(1)+'" class="ax" text-anchor="end">'+f4(v)+'</text>';});
+  s+='<path d="'+ar+'" class="ar"/><path d="'+dd+'" class="ln"/>';
+
+  /* one marker per stepSec bucket: the first reading inside each */
+  const seen=new Set(), marks=[];
+  series.forEach((r,i)=>{
+    const b=Math.floor(r[0]/stepSec);
+    if(!seen.has(b)){ seen.add(b); marks.push(i); }
+  });
+  if(marks[marks.length-1]!==series.length-1) marks.push(series.length-1);
+
+  marks.forEach((i,k)=>{
+    const x=X(i), y=Y(vals[i]), above=(k%2===0);
+    s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.4" class="dot"/>';
+    const tx=Math.max(L+2,Math.min(Wd-R-2,x));
+    s+='<text x="'+tx.toFixed(1)+'" y="'+(y+(above?-9:16)).toFixed(1)+
+       '" class="dotlab" text-anchor="middle">'+f4(vals[i])+'</text>';
+  });
+
+  /* emphasise the final reading */
+  const li=series.length-1;
+  s+='<circle cx="'+X(li).toFixed(1)+'" cy="'+Y(vals[li]).toFixed(1)+'" r="5" class="pt"/>';
+
+  /* time axis */
+  series.forEach((r,i)=>{
+    if(marks.indexOf(i)<0) return;
+    if(marks.indexOf(i) % (xLabelEvery||1) !== 0 && i!==li) return;
+    s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-10)+'" class="ax" text-anchor="middle">'+hm(r[0])+'</text>';
+  });
+  return s+"</svg>";
+}
+
 function line(pts, labels, target, nLabels){
   if(pts.length<2) return '<p class="empty">Not enough data yet &#8212; this fills in as ticks arrive.</p>';
   const Wd=760,H=210,L=54,R=16,T=16,B=28, iw=Wd-L-R, ih=H-T-B;
@@ -242,9 +316,9 @@ const miniRow = rows => rows.filter(r=>r[1]!=null)
 (function(){
   const m = D.morning || {}, pts = D.series_morning || [];
   $("msub").innerHTML = pts.length
-    ? "Midnight to 9:00 AM Central, minute by minute. This is the stretch that happens while you are asleep."
+    ? "Midnight to 9:00 AM Central. The line is every minute; the dots mark the rate every 30 minutes."
     : "No ticks recorded yet this morning.";
-  $("cm").innerHTML = line(pts.map(r=>r[1]), pts.map(r=>hm(r[0])), null, 6);
+  $("cm").innerHTML = lineMarked(pts, 1800, 2);   /* a dot every 30 minutes */
   $("mstat").innerHTML = miniRow([
     ["At midnight", m.open!=null?f4(m.open):null],
     ["At 9:00 AM",  m.last!=null?f4(m.last):null],
@@ -257,9 +331,9 @@ const miniRow = rows => rows.filter(r=>r[1]!=null)
   const p = D.prev || {}, pts = D.series_prevday || [];
   if(p.date) $("ph").textContent = "Yesterday \u2014 " + dayName(p.date);
   $("psub").innerHTML = pts.length
-    ? "The whole of the previous trading day, midnight to midnight Central."
+    ? "The whole of the previous trading day, midnight to midnight Central. The dots mark the rate on the hour."
     : "No minute data for the previous trading day.";
-  $("cp").innerHTML = line(pts.map(r=>r[1]), pts.map(r=>hm(r[0])), null, 7);
+  $("cp").innerHTML = lineMarked(pts, 3600, 3);   /* a dot every hour */
   $("pstat").innerHTML = miniRow([
     ["Open",  p.open!=null?f4(p.open):null],
     ["Close", p.close!=null?f4(p.close):null],
@@ -267,6 +341,60 @@ const miniRow = rows => rows.filter(r=>r[1]!=null)
     ["High",  p.hi!=null?f4(p.hi):null],
     ["Change", p.change_pct!=null?sp(p.change_pct):null, p.change_pct>=0?"up":"dn"]
   ]);
+})();
+
+/* last 20 trading days, midnight to midnight, on ONE shared vertical scale.
+   Autoscaling each panel would make a 5-pip day and a 50-pip day look
+   identical, which is worse than useless for comparing them. */
+(function(){
+  const days = D.days || [];
+  if(!days.length){
+    $("gsub").textContent = "No day data yet.";
+    $("grid20").innerHTML = '<div class="gcell"><p class="empty">Nothing to show yet.</p></div>';
+    return;
+  }
+  let lo = Math.min(...days.map(x=>x.lo)), hi = Math.max(...days.map(x=>x.hi));
+  const pad = (hi-lo)*0.08 || 0.0005; lo -= pad; hi += pad;
+
+  const nMin = days.filter(x=>x.res==="minute").length;
+  $("gsub").innerHTML =
+    "Each panel is one trading day, midnight to midnight Central, on a shared scale of "
+    + f4(lo) + " to " + f4(hi) + ". Weekends are skipped \u2014 the market is shut. "
+    + (nMin < days.length
+        ? "The most recent " + nMin + " day" + (nMin===1?" is":"s are") +
+          " built from minute readings; the earlier ones from hourly, which is all that exists that far back. "
+        : "")
+    + "All are averaged to the hour so the panels are comparable.";
+
+  const W=150,H=54,P=4;
+  const X = hr => P + (W-2*P)*hr/23;
+  const Y = v  => P + (H-2*P)*(1-(v-lo)/(hi-lo));
+
+  $("grid20").innerHTML = days.map(day=>{
+    const pts = day.pts || [];
+    const up  = (day.change_pct||0) >= 0;
+    const col = up ? "var(--calm)" : "var(--wise)";
+    const dd  = pts.map((r,i)=>(i?"L":"M")+X(r[0]).toFixed(1)+","+Y(r[1]).toFixed(1)).join("");
+    const lastPt = pts[pts.length-1];
+    const dt = new Date(day.d+"T00:00:00Z");
+    const nm = dt.toLocaleDateString("en-US",{weekday:"short",timeZone:"UTC"});
+    const dn = dt.toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"});
+    return '<div class="gcell">'
+      + '<div class="ghead"><span class="gday">'+nm+' '+dn+'</span>'
+      +   '<span class="gres">'+(day.res==="minute"?"min":"hr")+'</span></div>'
+      + '<svg class="gsvg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'
+      +   nm+' '+dn+', closed '+f4(day.close)+', '+sp(day.change_pct||0)+'">'
+      +   '<title>'+nm+' '+dn+'  \u2014  open '+f4(day.open)+', close '+f4(day.close)
+      +   ', low '+f4(day.lo)+', high '+f4(day.hi)+'</title>'
+      +   '<path d="'+dd+'" fill="none" stroke="'+col+'" stroke-width="1.6" '
+      +     'stroke-linejoin="round" stroke-linecap="round"/>'
+      +   (lastPt ? '<circle cx="'+X(lastPt[0]).toFixed(1)+'" cy="'+Y(lastPt[1]).toFixed(1)
+      +     '" r="2.6" fill="'+col+'" stroke="var(--panel)" stroke-width="1.2"/>' : '')
+      + '</svg>'
+      + '<div class="gfoot"><span class="gclose">'+f4(day.close)+'</span>'
+      +   '<span class="'+(up?"up":"dn")+'">'+sp(day.change_pct||0)+'</span></div>'
+      + '</div>';
+  }).join("");
 })();
 
 $("c90").innerHTML = line(D.s90.map(r=>r[1]), D.s90.map(r=>md(r[0])), D.threshold);
